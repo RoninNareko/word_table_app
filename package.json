@@ -12,6 +12,7 @@
     "@types/react": "^18.2.6",
     "@types/react-dom": "^18.2.4",
     "@xmldom/xmldom": "^0.8.7",
+    "gapi-script": "^1.2.0",
     "pizzip": "^3.1.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
