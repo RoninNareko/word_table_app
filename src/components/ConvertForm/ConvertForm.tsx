@@ -1,22 +1,29 @@
-import React from "react";
-import PizZip from "pizzip";
-import Docxtemplater from "docxtemplater";
+import { useForm, SubmitHandler } from "react-hook-form";
 
-const DocxReader = () => {
-  const showFile = async (e: any) => {
-    e.preventDefault();
-    const reader = new FileReader();
-    reader.onload = async (e: ProgressEvent<FileReader>) => {
-      const content: any = e.target?.result;
-
-      const doc = new Docxtemplater(new PizZip(content));
-      const text = doc.getFullText();
-      console.log(text.match(/\{(.*?)}/g));
-    };
-    reader.readAsBinaryString(e.target.files[0]);
-  };
-
-  return <input type="file" onChange={showFile} name="docx-reader" />;
+type Inputs = {
+  docxLink: string;
+  SheetLink: string;
 };
 
-export default DocxReader;
+export default function ConvertForm() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<Inputs>();
+  const onSubmit: SubmitHandler<Inputs> = (data) => {
+    console.log(data);
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input {...register("docxLink", { required: true })} />
+
+      <input {...register("SheetLink", { required: true })} />
+
+      {errors.docxLink && <span>This field is required</span>}
+
+      <input type="submit" />
+    </form>
+  );
+}
