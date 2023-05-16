@@ -4,6 +4,8 @@ import Docxtemplater from "docxtemplater";
 import * as XLSX from "xlsx";
 import { Range, WorkSheet } from "xlsx";
 import { PropertiesTypes, VariablesTypes } from "./ConvertForm.types";
+import { Document, Paragraph, TextRun } from "docx";
+// import { saveAs } from "file-saver";
 
 const Converter = () => {
   const [variables, setVariables] = useState<VariablesTypes[]>([]);
@@ -11,6 +13,7 @@ const Converter = () => {
 
   console.log("variables", variables);
   console.log("properties", properties);
+
   const doxcFileReader = async (e: ChangeEvent) => {
     e.preventDefault();
     const reader = new FileReader();
@@ -79,6 +82,37 @@ const Converter = () => {
       });
     };
     reader.readAsArrayBuffer(file);
+  };
+  const generateFile = () => {
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun("Hello World"),
+                new TextRun({
+                  text: "Foo Bar",
+                  bold: true,
+                }),
+                new TextRun({
+                  text: "\tGithub is the best",
+                  bold: true,
+                }),
+              ],
+            }),
+          ],
+        },
+      ],
+    });
+
+    // Used to export the file into a .docx file
+    // Packer.toBlob(doc).then((blob) => {
+    //   console.log(blob);
+    //   saveAs(blob, "example.docx");
+    //   console.log("Document created successfully");
+    // });
   };
   return (
     <>
