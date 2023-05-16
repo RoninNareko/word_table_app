@@ -1,38 +1,43 @@
-import React, { useState } from "react";
-import PizZip from "pizzip";
+import React, { ChangeEvent, useState } from "react";
+import PizZip, { LoadData } from "pizzip";
 import Docxtemplater from "docxtemplater";
 import * as XLSX from "xlsx";
+import { Range, WorkSheet } from "xlsx";
+import { PropertiesTypes, VariablesTypes } from "./ConvertForm.types";
 
 const Converter = () => {
-  const [variables, setVariables] = useState<any[]>([]);
-  const [properties, setProperties] = useState<any[]>([]);
+  const [variables, setVariables] = useState<VariablesTypes[]>([]);
+  const [properties, setProperties] = useState<PropertiesTypes[]>([]);
+
   console.log("variables", variables);
   console.log("properties", properties);
-  const doxcFileReader = async (e: any) => {
+  const doxcFileReader = async (e: ChangeEvent) => {
     e.preventDefault();
     const reader = new FileReader();
     reader.onload = async (e: ProgressEvent<FileReader>) => {
-      const content: any = e.target?.result;
+      const content = e.target?.result as LoadData;
 
       const doc = new Docxtemplater(new PizZip(content));
       const text = doc.getFullText();
       const filterText = text.match(/\{(.*?)}/g);
       if (filterText) {
         filterText?.map((text) =>
-          setVariables((prevState: any[]) => {
+          setVariables((prevState: VariablesTypes[]) => {
             const textToObject = JSON.parse(text);
             return [...prevState, textToObject];
           })
         );
       }
     };
-    reader.readAsBinaryString(e.target.files[0]);
+    const target = e.target as HTMLInputElement;
+    const file: File = (target.files as FileList)[0];
+    reader.readAsBinaryString(file);
   };
 
-  const getRangeData = async (variable: any, sheet: any) => {
+  const getRangeData = async (variable: VariablesTypes, sheet: WorkSheet) => {
     const variableType = variable.stroka && !variable.strokaTwo;
-    let range: any = null;
-    const dataRange: any[] = [];
+    let range: Range;
+    const dataRange: VariablesTypes[] = [];
 
     if (variableType) {
       range = XLSX.utils.decode_range(
@@ -50,61 +55,47 @@ const Converter = () => {
         for (let C = range.s.c; C <= range.e.c; ++C) {
           let cell_address = { c: C, r: R };
           let data = XLSX.utils.encode_cell(cell_address);
-          //@ts-ignore
           if (sheet[data]) {
             dataRange.push(sheet[data]);
           }
         }
       }
-      // console.log(dataRange, typeof dataRange);
-      setProperties((prevState) => {
-        return [...prevState, dataRange];
+      setProperties((prevState: PropertiesTypes[]) => {
+        return [...prevState, dataRange as PropertiesTypes];
       });
       resolve(true);
     });
   };
 
-  const sheetFileReader = (e: any) => {
-    const file = e.target.files[0];
+  const sheetFileReader = (e: ChangeEvent) => {
+    const target = e.target as HTMLInputElement;
+    const file: File = (target.files as FileList)[0];
     const reader = new FileReader();
-    reader.onload = function (e) {
-      //@ts-ignore
-      const table = XLSX.read(e.target.result);
+    reader.onload = function (e: ProgressEvent<FileReader>) {
+      const table = XLSX.read(e.target?.result);
       const sheet = table.Sheets[table.SheetNames[2]];
-
-      /* Iterate through each element in the structure */
       variables?.forEach(async (variable) => {
         await getRangeData(variable, sheet);
       });
-      // variables?.forEach((variable) => {
-      //   console.log("kkkkkkkkkkkkkkk", `A${6}:C${104}`);
-      // const range = XLSX.utils.decode_range(
-      //   `A${6}:C${104}`
-      // );
-      // /* Iterate through each element in the structure */
-      // for (let R = range.s.r; R <= range.e.r; ++R) {
-      //   for (let C = range.s.c; C <= range.e.c; ++C) {
-      //     let cell_address = { c: C, r: R };
-      //     let data = XLSX.utils.encode_cell(cell_address);
-      //     //@ts-ignore
-      //     if (sheet[data]) {
-      //       dataRange.push(sheet[data]);
-      //     }
-      //   }
-      // }
-      // console.log(sheet, range);
-      /* DO SOMETHING WITH workbook HERE */
-      // });
-      // console.log("dataRange", dataRange);
     };
     reader.readAsArrayBuffer(file);
   };
   return (
     <>
       <h1>docx</h1>
-      <input type="file" onChange={doxcFileReader} name="docx-reader" />
-      <h1>sheet</h1>
-      <input type="file" onChange={sheetFileReader} name="docx-reader" />
+      <input
+        type="file"
+        onChange={doxcFileReader}
+        accept=".docx"
+        name="docx-reader"
+      />
+
+      {variables.length && (
+        <>
+          <h1>sheet</h1>
+          <input type="file" onChange={sheetFileReader} accept=".xls,.xlsx" />
+        </>
+      )}
     </>
   );
 };

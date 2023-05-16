@@ -49,6 +49,7 @@
     ]
   },
   "devDependencies": {
+    "@types/pizzip": "^3.0.2",
     "bootstrap": "^5.2.3",
     "docxtemplater": "^3.37.7",
     "react-bootstrap": "^2.7.4",
