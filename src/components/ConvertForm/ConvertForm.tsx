@@ -1,67 +1,61 @@
-import { SubmitHandler, useForm } from "react-hook-form";
-import { useEffect } from "react";
+import React from "react";
+import PizZip from "pizzip";
+import Docxtemplater from "docxtemplater";
+import * as XLSX from "xlsx";
 
-type Inputs = {
-  docxLink: string;
-  SheetLink: string;
-};
-// init({
-//   apiKey: "AIzaSyDKmvDOyhhRZS1kpKsOxyZA2UutV0bpWlw",
-//   // Your API key will be automatically added to the Discovery Document URLs.
-//   // clientId and scope are optional if auth is not required.
-//   clientId:
-//       "688393895998-6bu5vfnhiks15bepesdjf8kr2bndt0ar.apps.googleusercontent.com",
-//   scope: "https://www.googleapis.com/auth/drive",
-//   plugin_name: "My Project 84122",
-// })
-export default function ConvertForm() {
-  const gapi = window.gapi;
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<Inputs>();
-  const onSubmit: SubmitHandler<Inputs> = (data) => {
-    console.log(data);
+const DocxReader = () => {
+  const doxcFileReader = async (e: any) => {
+    e.preventDefault();
+    const reader = new FileReader();
+    reader.onload = async (e: ProgressEvent<FileReader>) => {
+      const content: any = e.target?.result;
+
+      const doc = new Docxtemplater(new PizZip(content));
+      const text = doc.getFullText();
+      console.log(text.match(/\{(.*?)}/g));
+    };
+    reader.readAsBinaryString(e.target.files[0]);
   };
-  const DISCOVERY_DOC =
-    "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest";
-
-  const initer = () => {
-    gapi.client
-      .init({
-        apiKey: "AIzaSyDKmvDOyhhRZS1kpKsOxyZA2UutV0bpWlw",
-        discoveryDocs: [DISCOVERY_DOC],
-        plugin_name: "My Project 84122",
-      })
-      .then(() => {
-        gapi.client.drive.files
-          .get({
-            fileId: "1TKZFwNdDg-X-DPJiYXjtLC46JkgRjdAI",
-            alt: "media",
-          })
-          .then((docx) => {
-            console.log(docx.body, "docx");
-
-            // console.log(zip, "zip");
-          });
-      });
+  const sheetFileReader = (e: any) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      //@ts-ignore
+      const table = XLSX.read(e.target.result);
+      const sheet = table.Sheets[table.SheetNames[2]];
+      var range = XLSX.utils.decode_range("A6:C104");
+      const variables = {
+        list: 1,
+        stolbec: 6,
+        stroka: 10,
+        stolbec2: 104,
+      };
+      var dataRange = [];
+      /* Iterate through each element in the structure */
+      for (var R = range.s.r; R <= range.e.r; ++R) {
+        for (var C = range.s.c; C <= range.e.c; ++C) {
+          var cell_address = { c: C, r: R };
+          var data = XLSX.utils.encode_cell(cell_address);
+          //@ts-ignore
+          if (sheet[data]) {
+            dataRange.push(sheet[data]);
+          }
+        }
+      }
+      console.log(dataRange);
+      console.log(sheet, range);
+      /* DO SOMETHING WITH workbook HERE */
+    };
+    reader.readAsArrayBuffer(file);
   };
-  useEffect(() => {
-    if (gapi) {
-      console.log(gapi, "ololo");
-      gapi.load("client", initer);
-    }
-  }, [gapi, initer]);
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <input {...register("docxLink", { required: true })} />
-
-      <input {...register("SheetLink", { required: true })} />
-
-      {errors.docxLink && <span>This field is required</span>}
-
-      <input type="submit" />
-    </form>
+    <>
+      <h1>docx</h1>
+      <input type="file" onChange={doxcFileReader} name="docx-reader" />
+      <h1>sheet</h1>
+      <input type="file" onChange={sheetFileReader} name="docx-reader" />
+    </>
   );
-}
+};
+
+export default DocxReader;
