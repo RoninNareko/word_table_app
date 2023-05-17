@@ -4,8 +4,8 @@ import Docxtemplater from "docxtemplater";
 import * as XLSX from "xlsx";
 import { Range, WorkSheet } from "xlsx";
 import { PropertiesTypes, VariablesTypes } from "./ConvertForm.types";
-import { Document, Paragraph, TextRun } from "docx";
-// import { saveAs } from "file-saver";
+import { Document, Packer, Paragraph, TextRun } from "docx";
+import { saveAs } from "file-saver";
 
 const Converter = () => {
   const [variables, setVariables] = useState<VariablesTypes[]>([]);
@@ -84,35 +84,26 @@ const Converter = () => {
     reader.readAsArrayBuffer(file);
   };
   const generateFile = () => {
-    const doc = new Document({
-      sections: [
-        {
-          properties: {},
-          children: [
-            new Paragraph({
-              children: [
-                new TextRun("Hello World"),
-                new TextRun({
-                  text: "Foo Bar",
-                  bold: true,
-                }),
-                new TextRun({
-                  text: "\tGithub is the best",
-                  bold: true,
-                }),
-              ],
-            }),
-          ],
-        },
-      ],
+    const sections = properties.map((propertie: PropertiesTypes) => {
+      return {
+        properties: {},
+        children: [
+          new Paragraph({
+            children: [new TextRun(JSON.stringify(propertie))], // Just newline without text
+          }),
+        ],
+      };
     });
 
-    // Used to export the file into a .docx file
-    // Packer.toBlob(doc).then((blob) => {
-    //   console.log(blob);
-    //   saveAs(blob, "example.docx");
-    //   console.log("Document created successfully");
-    // });
+    const doc = new Document({
+      sections: sections,
+    });
+
+    Packer.toBlob(doc).then((blob) => {
+      console.log(blob);
+      saveAs(blob, "example.docx");
+      console.log("Document created successfully");
+    });
   };
   return (
     <>
@@ -130,6 +121,7 @@ const Converter = () => {
           <input type="file" onChange={sheetFileReader} accept=".xls,.xlsx" />
         </>
       )}
+      <button onClick={generateFile}>download file</button>
     </>
   );
 };
